@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Course, Lesson, Question, Choice, Submission, SubmissionChoice, Enrollment, Instructor, Learner
+from .models import Course, Lesson, Instructor, Learner, Question, Choice, Submission
 
 
 class ChoiceInline(admin.TabularInline):
@@ -15,12 +15,6 @@ class QuestionInline(admin.StackedInline):
     extra = 1
     fields = ('question_text', 'points')
     show_change_link = True
-
-
-class SubmissionInline(admin.TabularInline):
-    """Inline admin for SubmissionChoice within Submission."""
-    model = SubmissionChoice
-    extra = 0
 
 
 class LessonInline(admin.StackedInline):
@@ -72,19 +66,11 @@ class CourseAdmin(admin.ModelAdmin):
     inlines = [LessonInline]
 
 
-class EnrollmentAdmin(admin.ModelAdmin):
-    """Admin configuration for Enrollment model."""
-    list_display = ('user', 'course', 'enrolled_at', 'grade')
-    list_filter = ('course', 'enrolled_at')
-    search_fields = ('user__username', 'course__title')
-
-
 class SubmissionAdmin(admin.ModelAdmin):
     """Admin configuration for Submission model."""
     list_display = ('user', 'lesson', 'submitted_at', 'score', 'total_points')
     list_filter = ('submitted_at', 'lesson')
     search_fields = ('user__username', 'lesson__title')
-    inlines = [SubmissionInline]
 
 
 class InstructorAdmin(admin.ModelAdmin):
@@ -99,13 +85,12 @@ class LearnerAdmin(admin.ModelAdmin):
     search_fields = ('user__username',)
 
 
-# Register models with admin site
+# Register exactly the seven models with the admin site
 admin.site.register(Course, CourseAdmin)
 admin.site.register(Lesson, LessonAdmin)
 admin.site.register(Question, QuestionAdmin)
 admin.site.register(Choice, ChoiceAdmin)
 admin.site.register(Submission, SubmissionAdmin)
-admin.site.register(Enrollment, EnrollmentAdmin)
 admin.site.register(Instructor, InstructorAdmin)
 admin.site.register(Learner, LearnerAdmin)
 
@@ -113,3 +98,4 @@ admin.site.register(Learner, LearnerAdmin)
 admin.site.site_header = 'Online School Administration'
 admin.site.site_title = 'Online School Admin'
 admin.site.index_title = 'Welcome to Online School Admin Portal'
+
