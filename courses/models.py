@@ -2,6 +2,33 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
+class Instructor(models.Model):
+    """Model representing an instructor in the online school."""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='instructor_profile')
+    bio = models.TextField(blank=True)
+    expertise = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        verbose_name = 'Instructor'
+        verbose_name_plural = 'Instructors'
+
+    def __str__(self):
+        return self.user.username
+
+
+class Learner(models.Model):
+    """Model representing a learner in the online school."""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='learner_profile')
+    date_of_birth = models.DateField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Learner'
+        verbose_name_plural = 'Learners'
+
+    def __str__(self):
+        return self.user.username
+
+
 class Course(models.Model):
     """Model representing a course in the online school."""
     title = models.CharField(max_length=200)
@@ -16,6 +43,26 @@ class Course(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Enrollment(models.Model):
+    """Model representing a student's enrollment in a course."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='enrollments')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='enrollments')
+    enrolled_at = models.DateTimeField(auto_now_add=True)
+    grade = models.FloatField(default=0.0)
+
+    class Meta:
+        verbose_name = 'Enrollment'
+        verbose_name_plural = 'Enrollments'
+        unique_together = ('user', 'course')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.course.title}"
+
+    def is_get_score(self):
+        """Return True if the enrollment has a passing grade."""
+        return self.grade >= 70.0
 
 
 class Lesson(models.Model):
@@ -40,6 +87,7 @@ class Question(models.Model):
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='questions')
     question_text = models.CharField(max_length=500)
     points = models.PositiveIntegerField(default=1)
+    grade = models.PositiveIntegerField(default=1)
 
     class Meta:
         verbose_name = 'Question'
@@ -51,6 +99,10 @@ class Question(models.Model):
     def get_choices(self):
         """Return all choices for this question."""
         return self.choices.all()
+
+    def is_get_score(self):
+        """Return True if this question is worth points."""
+        return self.points > 0
 
 
 class Choice(models.Model):
@@ -71,9 +123,11 @@ class Submission(models.Model):
     """Model representing a student's exam submission."""
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
+    enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE, null=True, blank=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
     score = models.PositiveIntegerField(default=0)
     total_points = models.PositiveIntegerField(default=0)
+    grade = models.FloatField(default=0.0)
 
     class Meta:
         verbose_name = 'Submission'
@@ -82,6 +136,13 @@ class Submission(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.lesson.title}"
+
+    def is_get_score(self):
+        """Return True if the submission passed (70% or higher)."""
+        if self.total_points == 0:
+            return False
+        percentage = (self.score / self.total_points) * 100
+        return percentage >= 70.0
 
     def calculate_score(self):
         """Calculate the score based on selected choices."""
@@ -94,6 +155,8 @@ class Submission(models.Model):
 
         self.score = correct_answers
         self.total_points = self.lesson.questions.count()
+        if self.total_points > 0:
+            self.grade = (self.score / self.total_points) * 100
         self.save()
         return correct_answers
 

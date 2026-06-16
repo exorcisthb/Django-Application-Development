@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Course, Lesson, Question, Choice, Submission, SubmissionChoice
+from .models import Course, Lesson, Question, Choice, Submission, SubmissionChoice, Enrollment, Instructor, Learner
 
 
 class ChoiceInline(admin.TabularInline):
@@ -15,6 +15,19 @@ class QuestionInline(admin.StackedInline):
     extra = 1
     fields = ('question_text', 'points')
     show_change_link = True
+
+
+class SubmissionInline(admin.TabularInline):
+    """Inline admin for SubmissionChoice within Submission."""
+    model = SubmissionChoice
+    extra = 0
+
+
+class LessonInline(admin.StackedInline):
+    """Inline admin for Lesson model within Course admin."""
+    model = Lesson
+    extra = 1
+    fields = ('title', 'content', 'order')
 
 
 class QuestionAdmin(admin.ModelAdmin):
@@ -59,10 +72,11 @@ class CourseAdmin(admin.ModelAdmin):
     inlines = [LessonInline]
 
 
-class SubmissionInline(admin.TabularInline):
-    """Inline admin for SubmissionChoice within Submission."""
-    model = SubmissionChoice
-    extra = 0
+class EnrollmentAdmin(admin.ModelAdmin):
+    """Admin configuration for Enrollment model."""
+    list_display = ('user', 'course', 'enrolled_at', 'grade')
+    list_filter = ('course', 'enrolled_at')
+    search_fields = ('user__username', 'course__title')
 
 
 class SubmissionAdmin(admin.ModelAdmin):
@@ -73,11 +87,16 @@ class SubmissionAdmin(admin.ModelAdmin):
     inlines = [SubmissionInline]
 
 
-class LessonInline(admin.StackedInline):
-    """Inline admin for Lesson model within Course admin."""
-    model = Lesson
-    extra = 1
-    fields = ('title', 'content', 'order')
+class InstructorAdmin(admin.ModelAdmin):
+    """Admin configuration for Instructor model."""
+    list_display = ('user', 'expertise')
+    search_fields = ('user__username', 'expertise')
+
+
+class LearnerAdmin(admin.ModelAdmin):
+    """Admin configuration for Learner model."""
+    list_display = ('user', 'date_of_birth')
+    search_fields = ('user__username',)
 
 
 # Register models with admin site
@@ -86,6 +105,9 @@ admin.site.register(Lesson, LessonAdmin)
 admin.site.register(Question, QuestionAdmin)
 admin.site.register(Choice, ChoiceAdmin)
 admin.site.register(Submission, SubmissionAdmin)
+admin.site.register(Enrollment, EnrollmentAdmin)
+admin.site.register(Instructor, InstructorAdmin)
+admin.site.register(Learner, LearnerAdmin)
 
 # Customize admin site header and title
 admin.site.site_header = 'Online School Administration'

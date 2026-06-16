@@ -106,7 +106,7 @@ def show_exam_result(request, submission_id):
         })
 
     percentage = (submission.score / submission.total_points * 100) if submission.total_points > 0 else 0
-    is_passed = percentage >= 70
+    is_passed = submission.is_get_score()
 
     return render(request, 'courses/exam_result.html', {
         'submission': submission,
